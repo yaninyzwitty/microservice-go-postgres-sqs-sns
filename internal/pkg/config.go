@@ -10,10 +10,15 @@ import (
 type Config struct {
 	Server   Server `yaml:"server"`
 	Database DB     `yaml:"database"`
+	AWS      Aws    `yaml:"aws"`
 }
 
 type Server struct {
 	PORT int `yaml:"port"`
+}
+
+type Aws struct {
+	Region string `yaml:"region"`
 }
 
 type DB struct {
