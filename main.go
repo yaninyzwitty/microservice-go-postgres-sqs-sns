@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"time"
 
+	"github.com/yaninyzwitty/sqs-go/internal/aws/sns"
 	"github.com/yaninyzwitty/sqs-go/internal/database"
 	"github.com/yaninyzwitty/sqs-go/internal/pkg"
 )
@@ -37,5 +39,20 @@ func main() {
 		slog.Error("Failed to ping database", "error", err)
 	}
 	os.Exit(1)
+
+	snsClient, err := sns.LoadSnsConfig(ctx, cfg.AWS.Region)
+	if err != nil {
+		slog.Error("failed to load sns configuration", "error", err)
+		os.Exit(1)
+	}
+
+	// CREATING A TOPIC IE IN TERRAFORM MIGHT BE A GOOD CHOICE, RATHER
+
+	snsTopicArn, err := sns.CreateSnsTopicARN(ctx, "eccomerce-arn", snsClient)
+	if err != nil {
+		slog.Error("failed to create sns topic arn, topic might already exist", "error", err)
+
+	}
+	fmt.Println(snsTopicArn)
 
 }
