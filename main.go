@@ -46,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// CREATING A TOPIC IE IN TERRAFORM MIGHT BE A GOOD CHOICE, RATHER
+	// CREATING A TOPIC IE IN TERRAFORM MIGHT BE A GOOD CHOICE, RATHER THAN THIS APPROACH
 
 	snsTopicArn, err := sns.CreateSnsTopicARN(ctx, "eccomerce-arn", snsClient)
 	if err != nil {
