@@ -1,0 +1,61 @@
+// using sns topic
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
+)
+
+type Notification struct {
+	Title   string `json:"title"`
+	Message string `json:"message"`
+}
+
+func main() {
+	// Load the default AWS configuration
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
+	if err != nil {
+		log.Fatalf("unable to load SDK config, %v", err)
+	}
+
+	snsClient := sns.NewFromConfig(cfg)
+
+	// creating a new sns messenger
+
+	createdTopicOutput, err := snsClient.CreateTopic(context.TODO(), &sns.CreateTopicInput{
+		Name: aws.String("MyNewTopic"),
+	})
+	if err != nil {
+		log.Fatalf("failed to create topic: %v", err)
+	}
+
+	topicArn := *createdTopicOutput.TopicArn
+	fmt.Printf("Topic ARN: %v\n", topicArn)
+
+	notification := Notification{
+		Title:   "Hello from witty",
+		Message: "Test message from sns is here",
+	}
+
+	jsonPayload, err := json.Marshal(notification)
+	if err != nil {
+		log.Fatalf("marshal failed: %v", err)
+	}
+	input := &sns.PublishInput{
+		Message:  aws.String(string(jsonPayload)),
+		TopicArn: aws.String(topicArn),
+	}
+
+	result, err := snsClient.Publish(context.TODO(), input)
+	if err != nil {
+		log.Fatalf("failed to publish message: %v", err)
+	}
+	fmt.Printf("Message sent to topic %s with MessageId: %s\n", topicArn, *result.MessageId)
+
+}
