@@ -8,6 +8,7 @@ import (
 )
 
 type OrderService interface {
+	CreateOrder(ctx context.Context, order model.Order) (*model.Order, error)
 }
 
 type orderService struct {
@@ -15,7 +16,7 @@ type orderService struct {
 }
 
 func NewOrderService(repo repository.OrderRepository) OrderService {
-	return orderService{repo: repo}
+	return &orderService{repo: repo}
 }
 
 func (s *orderService) CreateOrder(ctx context.Context, order model.Order) (*model.Order, error) {
