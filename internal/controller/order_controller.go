@@ -39,7 +39,7 @@ func (c *OrderController) CreateOrderHandler(w http.ResponseWriter, r *http.Requ
 
 	createdOrder, err := c.service.CreateOrder(ctx, order)
 	if err != nil {
-		http.Error(w, "Failed to create order", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	response, err := json.Marshal(createdOrder)

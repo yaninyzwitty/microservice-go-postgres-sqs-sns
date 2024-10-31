@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/yaninyzwitty/sqs-go/internal/aws/sns"
 	"github.com/yaninyzwitty/sqs-go/internal/aws/sqs"
 	"github.com/yaninyzwitty/sqs-go/internal/controller"
 	"github.com/yaninyzwitty/sqs-go/internal/database"
@@ -33,6 +32,7 @@ func main() {
 		slog.Error("failed to load configuration", "error", err)
 		os.Exit(1)
 	}
+	slog.Info("Loaded config succesfully.")
 
 	db, err := database.NewDatabaseConnection(ctx, cfg.Database.DATABASE_URL)
 	if err != nil {
@@ -51,18 +51,6 @@ func main() {
 		slog.Error("failed to load sqs client", "Error", err)
 		os.Exit(1)
 	}
-
-	snsClient, err := sns.LoadSnsConfig(ctx, cfg.AWS.Region)
-	if err != nil {
-		slog.Error("failed to load sns configuration", "error", err)
-		os.Exit(1)
-	}
-
-	snsTopicArn, err := sns.CreateSnsTopicARN(ctx, "eccomerce-arn", snsClient)
-	if err != nil {
-		slog.Error("failed to create sns topic arn, topic might already exist", "error", err)
-	}
-	fmt.Println(snsTopicArn)
 
 	orderRepo := repository.NewOrderRepository(db)
 	orderService := service.NewOrderService(orderRepo)
