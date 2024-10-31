@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yaninyzwitty/sqs-go/internal/model"
 )
@@ -13,15 +13,19 @@ type OrderRepository interface {
 }
 
 type orderRepository struct {
-	snsClient   *sns.Client
-	snsTopicArn *string
-	db          *pgxpool.Pool
+	db *pgxpool.Pool
 }
 
-func NewOrderRepository(snsClient *sns.Client, topicArn *string, db *pgxpool.Pool) OrderRepository {
-	return &orderRepository{snsClient: snsClient, snsTopicArn: topicArn, db: db}
+func NewOrderRepository(db *pgxpool.Pool) OrderRepository {
+	return &orderRepository{db: db}
 }
 
 func (r *orderRepository) CreateOrder(ctx context.Context, order model.Order) (*model.Order, error) {
-	return nil, nil
+	query := `INSERT INTO orders(product_id, quantity, total_price) VALUES($1, $2, $3) RETURNING id, product_id, total_price, order_date`
+	err := r.db.QueryRow(ctx, query, order.ProductId, order.Quantity, order.TotalPrice).Scan(&order.ID, &order.ProductId, &order.TotalPrice, &order.OrderDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create order: %w", err)
+	}
+	return &order, nil
+
 }

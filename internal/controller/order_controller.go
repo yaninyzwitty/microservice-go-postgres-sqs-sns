@@ -2,18 +2,24 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/google/uuid"
 	"github.com/yaninyzwitty/sqs-go/internal/model"
 	"github.com/yaninyzwitty/sqs-go/internal/service"
 )
 
 type OrderController struct {
-	service service.OrderService
+	service   service.OrderService
+	sqsClient *sqs.Client
+	queueURL  *string
 }
 
-func NewOrderController(service service.OrderService) *OrderController {
-	return &OrderController{service: service}
+func NewOrderController(service service.OrderService, client *sqs.Client, queueURL *string) *OrderController {
+	return &OrderController{service: service, sqsClient: client, queueURL: queueURL}
 }
 
 func (c *OrderController) CreateOrderHandler(w http.ResponseWriter, r *http.Request) {
@@ -25,20 +31,29 @@ func (c *OrderController) CreateOrderHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if order.Quantity == 0 || order.Status == "" {
-		http.Error(w, "Both quantity and status are required", http.StatusBadRequest)
+	if order.Quantity == 0 {
+		http.Error(w, " quantity is required", http.StatusBadRequest)
 		return
 	}
+	order.ID = uuid.New()
 
 	createdOrder, err := c.service.CreateOrder(ctx, order)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to create order", http.StatusInternalServerError)
+		return
+	}
+	response, err := json.Marshal(createdOrder)
+	if err != nil {
+		http.Error(w, "Failed to marshal order response to JSON", http.StatusInternalServerError)
 		return
 	}
 
-	response, err := json.Marshal(createdOrder)
+	_, err = c.sqsClient.SendMessage(ctx, &sqs.SendMessageInput{
+		QueueUrl:    c.queueURL,
+		MessageBody: aws.String(string(response)),
+	})
 	if err != nil {
-		http.Error(w, "Error marshalling to json", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to send message to queue: %v", err), http.StatusInternalServerError)
 		return
 	}
 
